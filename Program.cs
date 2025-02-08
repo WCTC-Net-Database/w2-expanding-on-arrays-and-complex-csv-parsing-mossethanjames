@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
 
+using System;
+using System.IO;
+
 class Program
 {
     static string[] lines;
@@ -32,6 +35,7 @@ class Program
                     LevelUpCharacter(lines);
                     break;
                 case "4":
+                    File.WriteAllLines(filePath, lines);
                     return;
                 default:
                     Console.WriteLine("Invalid choice. Please try again.");
@@ -42,46 +46,37 @@ class Program
 
     static void DisplayAllCharacters(string[] lines)
     {
-        // Skip the header row
         for (int i = 1; i < lines.Length; i++)
         {
             string line = lines[i];
+            string[] fields = ParseCsvLine(line);
 
-            string name;
-            int commaIndex;
+            string name = fields[0];
+            string characterClass = fields[1];
+            int level = int.Parse(fields[2]);
+            int hitPoints = int.Parse(fields[3]);
+            string[] equipment = fields[4].Split('|');
 
-            // Check if the name is quoted
-            if (line.StartsWith("\""))
-            {
-                // TODO: Find the closing quote and the comma right after it
-                // TODO: Remove quotes from the name if present and parse the name
-                // name = ...
-            }
-            else
-            {
-                // TODO: Name is not quoted, so store the name up to the first comma
-                // name =
-            }
-
-            // TODO: Parse characterClass, level, hitPoints, and equipment
-            // string characterClass = ...
-            // int level = ...
-            // int hitPoints = ...
-
-            // TODO: Parse equipment noting that it contains multiple items separated by '|'
-            // string[] equipment = ...
-
-            // Display character information
-            // Console.WriteLine($"Name: {name}, Class: {characterClass}, Level: {level}, HP: {hitPoints}, Equipment: {string.Join(", ", equipment)}");
+            Console.WriteLine($"Name: {name}, Class: {characterClass}, Level: {level}, HP: {hitPoints}, Equipment: {string.Join(", ", equipment)}");
         }
     }
 
     static void AddCharacter(ref string[] lines)
     {
-        // TODO: Implement logic to add a new character
-        // Prompt for character details (name, class, level, hit points, equipment)
-        // DO NOT just ask the user to enter a new line of CSV data or enter the pipe-separated equipment string
-        // Append the new character to the lines array
+        Console.Write("Enter character name: ");
+        string name = Console.ReadLine();
+        Console.Write("Enter character class: ");
+        string characterClass = Console.ReadLine();
+        Console.Write("Enter character level: ");
+        int level = int.Parse(Console.ReadLine());
+        Console.Write("Enter character hit points: ");
+        int hitPoints = int.Parse(Console.ReadLine());
+        Console.Write("Enter character equipment (separated by '|'): ");
+        string equipment = Console.ReadLine();
+
+        string newCharacter = $"{name},{characterClass},{level},{hitPoints},{equipment}";
+        Array.Resize(ref lines, lines.Length + 1);
+        lines[^1] = newCharacter;
     }
 
     static void LevelUpCharacter(string[] lines)
@@ -89,28 +84,51 @@ class Program
         Console.Write("Enter the name of the character to level up: ");
         string nameToLevelUp = Console.ReadLine();
 
-        // Loop through characters to find the one to level up
         for (int i = 1; i < lines.Length; i++)
         {
             string line = lines[i];
+            string[] fields = ParseCsvLine(line);
 
-            // TODO: Check if the name matches the one to level up
-            // Do not worry about case sensitivity at this point
-            if (line.Contains(nameToLevelUp))
+            if (fields[0].Equals(nameToLevelUp, StringComparison.OrdinalIgnoreCase))
             {
-
-                // TODO: Split the rest of the fields locating the level field
-                // string[] fields = ...
-                // int level = ...
-
-                // TODO: Level up the character
-                // level++;
-                // Console.WriteLine($"Character {name} leveled up to level {level}!");
-
-                // TODO: Update the line with the new level
-                // lines[i] = ...
+                int level = int.Parse(fields[2]);
+                level++;
+                fields[2] = level.ToString();
+                lines[i] = string.Join(",", fields);
+                Console.WriteLine($"Character {fields[0]} leveled up to level {level}!");
                 break;
             }
         }
+    }
+
+    static string[] ParseCsvLine(string line)
+    {
+        var fields = new List<string>();
+        bool inQuotes = false;
+        string field = "";
+
+        foreach (char c in line)
+        {
+            if (c == '"' && !inQuotes)
+            {
+                inQuotes = true;
+            }
+            else if (c == '"' && inQuotes)
+            {
+                inQuotes = false;
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                fields.Add(field);
+                field = "";
+            }
+            else
+            {
+                field += c;
+            }
+        }
+        fields.Add(field);
+
+        return fields.ToArray();
     }
 }
